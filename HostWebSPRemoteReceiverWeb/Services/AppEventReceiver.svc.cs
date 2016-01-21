@@ -23,19 +23,9 @@ namespace HostWebSPRemoteReceiverWeb.Services
                 case SPRemoteEventType.AppInstalled:
                     HandleAppInstalled(properties);
                     break;
-                case SPRemoteEventType.ItemAdding:
-                    HandleItemAdding(properties);
-                    break;
+                
+                
             }
-            /*using (ClientContext clientContext = TokenHelper.CreateAppEventClientContext(properties, useAppWeb: false))
-            {
-                if (clientContext != null)
-                {
-                    clientContext.Load(clientContext.Web);
-                    clientContext.ExecuteQuery();
-                }
-            }*/
-
 
             return result;
         }
@@ -46,11 +36,19 @@ namespace HostWebSPRemoteReceiverWeb.Services
         /// <param name="properties">Unused.</param>
         public void ProcessOneWayEvent(SPRemoteEventProperties properties)
         {
-            throw new NotImplementedException();
+            //Handles asynchronus events
+            switch(properties.EventType)
+            {
+                case SPRemoteEventType.ListAdded:
+                    HandleListAdded(properties);
+                    break;
+            }
         }
 
         private void HandleAppInstalled(SPRemoteEventProperties properties)
         {
+            //Below code is used to register ListAdded event on Host Web 
+            //Note the token helper method used - second paratemer is to whether to create context with App or not
             using (ClientContext clientContext = TokenHelper.CreateAppEventClientContext(properties, false)) 
             {
                 if(clientContext != null)
@@ -67,6 +65,18 @@ namespace HostWebSPRemoteReceiverWeb.Services
                 if(null != clientContext)
                 {
                     new RemoteEventReceiverManager().ItemAddingListEventHandler(clientContext, properties.ItemEventProperties.ListId, properties.ItemEventProperties.ListItemId);
+                }
+            }
+        }
+
+        private void HandleListAdded(SPRemoteEventProperties properties)
+        {
+            //Below code is called when list created.
+            using (ClientContext clientContext = TokenHelper.CreateRemoteEventReceiverClientContext(properties))
+            {
+                if (null != clientContext)
+                {
+                    new RemoteEventReceiverManager().ListAddedEventHandler(clientContext, properties.ListEventProperties.ListId);
                 }
             }
         }
